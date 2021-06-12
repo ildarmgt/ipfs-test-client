@@ -29,11 +29,9 @@
         ipnsPubsub: true,
         dht: true
       },
-      // pubsub: { enabled: true },
-      // config: {
-        // dht: { enabled: true },
-        // pubsub: { enabled: true }
-      // }
+      config: {
+        dht: { enabled: true },
+      }
     })
 
     const handleOk = async () => {
@@ -74,9 +72,9 @@
       const ipns = await mynode.name.publish(`/ipfs/${cid}`)
       console.log('ipns publish result:', ipns)
 
-      ipnsLink = `https://gateway.ipfs.io/ipns/${ipns.name}`
+      const ipnsLink = `https://gateway.ipfs.io/ipns/${ipns.name}`
 
-      divOutput.innerHTML += `ipns link should be <a href="${ipnsLink}" target="_blank">${ipnsLink}</a>`
+      divOutput.innerHTML += `ipns link should be <a href="${ipnsLink}" target="_blank">${ipnsLink}</a> but client-side ipfs node seems to have issues with broadcasting this`
 
       mynode.pubsub.subscribe(ipns.name, (message) => {
         console.log('got message from ' + message.from)
