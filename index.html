@@ -2,6 +2,7 @@
 <html>
 <head>
   <title>ipfs test</title>
+  <meta charset="UTF-8">
 </head>
 <body>
   <!-- input -->
@@ -20,19 +21,30 @@
   <!-- experiment here -->
   <script defer>
     // create new ipfs node
-    const initializedNode = Ipfs.create()
+    const initializedNode = Ipfs.create({
+      EXPERIMENTAL: {
+        ipnsPubsub: true,
+        dht: true
+      },
+      // pubsub: { enabled: true },
+      // config: {
+        // dht: { enabled: true },
+        // pubsub: { enabled: true }
+      // }
+    })
 
     const handleOk = async () => {
       // check node status
-      const node = await initializedNode
-      const status = node.isOnline() ? 'online' : 'offline'
+      window.mynode = await initializedNode
+
+      const status = mynode.isOnline() ? 'online' : 'offline'
       divOutput.innerHTML = `Node status: ${status}\n\n`
 
       // generate data
       const data = divInput.innerHTML
 
       // add to ipfs node
-      const results = await node.add(data)
+      const results = await mynode.add(data)
 
       // get content id for this data as string
       const cid = results.cid.toString()
@@ -41,7 +53,7 @@
       divOutput.innerHTML += `successfully stored with CID of ${cid}\n\n`
 
       // get data from ipfs
-      const stream = node.cat(cid)
+      const stream = mynode.cat(cid)
       let data2 = ''
       for await (const chunk of stream) {
         // chunks of data are returned as a Buffer, convert it back to a string
@@ -52,12 +64,38 @@
 
       const link = `https://ipfs.io/ipfs/${cid}`
       divOutput.innerHTML += `data can also be read via a public ipfs node gateway: <a href="${link}" target="_blank">${link}</a>\n\n`
+      // other gateways: https://ipfs.github.io/public-gateway-checker/
 
-      console.log(node)
+      console.log('node object:', mynode)
 
-      const ipns = await node.name.publish(`/ipfs/${cid}`)
-      console.log(ipns)
+      const ipns = await mynode.name.publish(`/ipfs/${cid}`)
+      console.log('ipns publish result:', ipns)
+
+      ipnsLink = `https://gateway.ipfs.io/ipns/${ipns.name}`
+
+      divOutput.innerHTML += `ipns link should be <a href="${ipnsLink}" target="_blank">${ipnsLink}</a>`
+
+      console.log(await mynode.name.pubsub.state())
+
+      mynode.pubsub.subscribe(ipns.name, (message) => {
+        console.log('got message from ' + message.from)
+
+        // data is a buffer. Here we're converting it into a string
+
+        const data = message.data.toString()
+        console.log('containing data: ' + data)
+      })
+
+      // console.log(await mynode.name.pubsub.subs())
+
+      // for await (const name of mynode.name.resolve(ipns.name)) {
+      //   console.log(name)
+      // }
+
+      // const peerInfos = await node.swarm.peers()
+      // console.log(peerInfos)
     }
+
   </script>
 </body>
 </html>
