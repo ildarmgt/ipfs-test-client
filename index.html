@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ipfs test</title>
+</head>
+<body>
+  <!-- input -->
+  <div contenteditable="true" id="divInput">Bitcoin Name System can use IPFS network for off-chain temporary data storage</div>
+  <button onclick="handleOk()">Add above to IPFS</button>
+
+  <br><br>
+
+  <!-- for outputs -->
+  <div id="divOutput" style="white-space:pre-wrap; overflow-wrap: break-word;"></div>
+
+  <!-- import js-ipfs library -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/ipfs/dist/index.min.js"></script> -->
+  <script src="https://unpkg.com/ipfs/dist/index.min.js"></script>
+
+  <!-- experiment here -->
+  <script defer>
+    // create new ipfs node
+    const initializedNode = Ipfs.create()
+
+    const handleOk = async () => {
+      // check node status
+      const node = await initializedNode
+      const status = node.isOnline() ? 'online' : 'offline'
+      divOutput.innerHTML = `Node status: ${status}\n\n`
+
+      // generate data
+      const data = divInput.innerHTML
+
+      // add to ipfs node
+      const results = await node.add(data)
+
+      // get content id for this data as string
+      const cid = results.cid.toString()
+
+      // posts
+      divOutput.innerHTML += `successfully stored with CID of ${cid}\n\n`
+
+      // get data from ipfs
+      const stream = node.cat(cid)
+      let data2 = ''
+      for await (const chunk of stream) {
+        // chunks of data are returned as a Buffer, convert it back to a string
+        data2 += chunk.toString()
+      }
+
+      divOutput.innerHTML += `data returned via browser ipfs node: ${data2}\n\n`
+
+      const link = `https://ipfs.io/ipfs/${cid}`
+      divOutput.innerHTML += `data can also be read via a public ipfs node gateway: <a href="${link}" target="_blank">${link}</a>\n\n`
+
+      console.log(node)
+
+      const ipns = await node.name.publish(`/ipfs/${cid}`)
+      console.log(ipns)
+    }
+  </script>
+</body>
+</html>
