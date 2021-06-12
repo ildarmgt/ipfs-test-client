@@ -20,8 +20,11 @@
 
   <!-- experiment here -->
   <script defer>
+    // api https://github.com/ipfs/js-ipfs/tree/master/docs/core-api
+
     // create new ipfs node
     const initializedNode = Ipfs.create({
+      pubsub: true,
       EXPERIMENTAL: {
         ipnsPubsub: true,
         dht: true
@@ -66,7 +69,7 @@
       divOutput.innerHTML += `data can also be read via a public ipfs node gateway: <a href="${link}" target="_blank">${link}</a>\n\n`
       // other gateways: https://ipfs.github.io/public-gateway-checker/
 
-      console.log('node object:', mynode)
+      console.log('mynode object:', mynode)
 
       const ipns = await mynode.name.publish(`/ipfs/${cid}`)
       console.log('ipns publish result:', ipns)
@@ -74,8 +77,6 @@
       ipnsLink = `https://gateway.ipfs.io/ipns/${ipns.name}`
 
       divOutput.innerHTML += `ipns link should be <a href="${ipnsLink}" target="_blank">${ipnsLink}</a>`
-
-      console.log(await mynode.name.pubsub.state())
 
       mynode.pubsub.subscribe(ipns.name, (message) => {
         console.log('got message from ' + message.from)
@@ -86,14 +87,24 @@
         console.log('containing data: ' + data)
       })
 
-      // console.log(await mynode.name.pubsub.subs())
+      mynode.pubsub.publish(ipns.name, new TextEncoder().encode(ipns.value))
+      console.log(`published encoded ${ipns.value} under topic of ${ipns.name}`)
 
-      // for await (const name of mynode.name.resolve(ipns.name)) {
-      //   console.log(name)
-      // }
+      const topics = await mynode.pubsub.ls()
+      console.log('pubsub.ls() subscribed topics', topics)
 
-      // const peerInfos = await node.swarm.peers()
-      // console.log(peerInfos)
+      console.log('pin.ls:')
+      for await (const { cid, type } of mynode.pin.ls()) {
+        console.log({ cid, type, cidString: cid.toString(), cidv1: cid.toV1(), test: cid.multihash.toString('utf8') })
+      }
+
+      console.log('mynode.name.pubsub.state() :', await mynode.name.pubsub.state())
+      console.log('mynode.name.pubsub.subs() :', await mynode.name.pubsub.subs())
+
+      console.log('mynode.name.resolve(`/ipns/${ipns.name}`) :')
+      for await (const name of mynode.name.resolve(`/ipns/${ipns.name}`)) {
+        console.log(name)
+      }
     }
 
   </script>
